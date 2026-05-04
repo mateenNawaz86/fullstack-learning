@@ -1,12 +1,16 @@
 "use client";
 
+import { useSelector } from "react-redux";
 import { useGetUsersQuery } from "../../services/usersApi";
 import { UserField } from "../../types/user";
+import { AuthField } from "../../types/auth";
+import type { RootState } from "../../store/store";
 import { SekeletonCard } from "./skeleton-card";
 import { UserCard } from "./UserCard";
 
 export function UserList() {
   const { data, isLoading, isError, error, refetch } = useGetUsersQuery();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
 
   return (
     <div className="px-4 py-10">
@@ -54,13 +58,18 @@ export function UserList() {
           </p>
         )}
 
-        {!isLoading && !isError && data && data.users.length > 0 && (
+        {!isLoading && !isError && data && data.users?.length > 0 && (
           <ul className="space-y-3">
-            {data.users.map((user) => (
-              <li key={user[UserField.Id]}>
-                <UserCard user={user} />
-              </li>
-            ))}
+            {data?.users
+              // Filter out the current user from the list using the same logic as the backend ($ne operator)
+              .filter(
+                (user) => user[UserField.Id] !== currentUser?.[AuthField.Id],
+              )
+              ?.map((user) => (
+                <li key={user[UserField.Id]}>
+                  <UserCard user={user} />
+                </li>
+              ))}
           </ul>
         )}
       </div>

@@ -4,6 +4,7 @@ import { User } from "../models/user.models";
 // Returns all users except the currently authenticated one
 export const getUsers = async (req: Request, res: Response): Promise<void> => {
   try {
+    // Exclude the current user from the results using $ne (not equal) operator
     const users = await User.find({ _id: { $ne: req.user!._id } }).select(
       "-password -__v",
     );

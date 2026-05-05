@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
-import { useLogoutMutation } from "@/src/services/authApi";
-import { clearCredentials } from "@/src/store/authSlice";
+import { useGetMeQuery, useLogoutMutation } from "@/src/services/authApi";
+import { clearCredentials, setCredentials } from "@/src/store/authSlice";
 import { baseApi } from "@/src/services/baseApi";
 import { AuthField } from "@/src/enums/enum";
 
@@ -18,9 +18,20 @@ export default function DashboardLayout({
   const user = useAppSelector((state) => state.auth.user);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
+  // On page refresh Redux is empty, so we call getMe to restore the session from
+  // the HTTP-only cookie. Skipped when user is already in Redux (in-session nav).
+  // baseQueryWithReauth transparently refreshes an expired access token, so this
+  // only errors when both tokens are gone/invalid → redirect to login.
+  const { data: meData, isLoading: isRestoring, isError: isSessionInvalid } =
+    useGetMeQuery(undefined, { skip: !!user });
+
   useEffect(() => {
-    if (!user) router.replace("/login");
-  }, [user, router]);
+    if (meData?.user) dispatch(setCredentials(meData.user));
+  }, [meData, dispatch]);
+
+  useEffect(() => {
+    if (!isRestoring && isSessionInvalid) router.replace("/login");
+  }, [isRestoring, isSessionInvalid, router]);
 
   const handleLogout = async () => {
     await logout();
@@ -31,7 +42,7 @@ export default function DashboardLayout({
     router.push("/login");
   };
 
-  if (!user) return null;
+  if (isRestoring || !user) return null;
 
   return (
     <div className="min-h-screen bg-gray-950">

@@ -12,6 +12,8 @@ export function UserList() {
   const { data, isLoading, isError, error, refetch } = useGetUsersQuery();
   const currentUser = useSelector((state: RootState) => state.auth.user);
 
+  console.log(data, "data");
+
   return (
     <div className="px-4 py-10">
       <div className="mx-auto max-w-4xl">

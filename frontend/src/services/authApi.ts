@@ -6,6 +6,7 @@ import type {
   LoginResponse,
   LogoutResponse,
   RefreshResponse,
+  GetMeResponse,
 } from "../types/auth";
 
 export const authApi = baseApi.injectEndpoints({
@@ -42,6 +43,14 @@ export const authApi = baseApi.injectEndpoints({
         method: "POST",
       }),
     }),
+
+    // Validates the access token cookie and returns the current user.
+    // Used by the dashboard layout to restore Redux state after a page refresh.
+    // baseQueryWithReauth silently refreshes an expired access token before this
+    // resolves, so callers never need to handle token expiry manually.
+    getMe: builder.query<GetMeResponse, void>({
+      query: () => "/auth/me",
+    }),
   }),
 });
 
@@ -50,4 +59,5 @@ export const {
   useLoginMutation,
   useLogoutMutation,
   useRefreshMutation,
+  useGetMeQuery,
 } = authApi;

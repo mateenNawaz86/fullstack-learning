@@ -17,3 +17,14 @@ export interface GetUsersResponse {
   count: number;
   users: User[];
 }
+
+export interface UpdateUserRequest {
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
+export interface UpdateUserResponse {
+  success: boolean;
+  user: User;
+}

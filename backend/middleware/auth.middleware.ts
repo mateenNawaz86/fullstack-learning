@@ -29,7 +29,9 @@ export const protect = async (
     }
 
     if (!token) {
-      res.status(401).json({ success: false, message: "Not authorized, no token provided" });
+      res
+        .status(401)
+        .json({ success: false, message: "Not authorized, no token provided" });
       return;
     }
 
@@ -49,7 +51,9 @@ export const protect = async (
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      res.status(401).json({ success: false, message: "Not authorized, user not found" });
+      res
+        .status(401)
+        .json({ success: false, message: "Not authorized, user not found" });
       return;
     }
 
@@ -58,7 +62,10 @@ export const protect = async (
     next();
   } catch (error) {
     if ((error as Error).name === "TokenExpiredError") {
-      res.status(401).json({ success: false, message: "Token expired, please login again" });
+      res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
       return;
     }
     res.status(401).json({ success: false, message: "Invalid token" });

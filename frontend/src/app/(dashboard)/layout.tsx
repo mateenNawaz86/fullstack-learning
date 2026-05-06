@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { useGetMeQuery, useLogoutMutation } from "@/src/services/authApi";
 import { clearCredentials, setCredentials } from "@/src/store/authSlice";
@@ -14,6 +15,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
@@ -49,6 +51,25 @@ export default function DashboardLayout({
       <header className="sticky top-0 z-10 border-b border-white/10 bg-gray-900/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
           <span className="text-sm font-semibold text-white">Dashboard</span>
+
+          <nav className="flex items-center gap-1">
+            {[
+              { href: "/users", label: "Users" },
+              { href: "/todos", label: "Todos" },
+            ].map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  pathname === href
+                    ? "bg-white/10 text-white"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
 
           <div className="flex items-center gap-4">
             <span className="hidden text-xs text-gray-400 sm:block">

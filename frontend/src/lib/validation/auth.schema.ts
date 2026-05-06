@@ -43,3 +43,27 @@ export const registerSchema = z
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+
+// All fields required in the form, but password is allowed to be empty —
+// an empty string means "no change" and is filtered out before the API call.
+export const updateUserSchema = z.object({
+  [AuthField.Name]: z
+    .string()
+    .min(3, "Name must be at least 3 characters")
+    .max(50, "Name must be at most 50 characters")
+    .regex(/^[a-zA-Z\s]+$/, "Name may only contain letters and spaces"),
+
+  [AuthField.Email]: z
+    .string()
+    .min(1, "Email is required")
+    .check(z.email({ message: "Please enter a valid email address" })),
+
+  // Empty string → leave the current password unchanged
+  [AuthField.Password]: z
+    .string()
+    .refine((val) => val === "" || val.length >= 6, {
+      message: "Password must be at least 6 characters",
+    }),
+});
+
+export type UpdateUserFormValues = z.infer<typeof updateUserSchema>;

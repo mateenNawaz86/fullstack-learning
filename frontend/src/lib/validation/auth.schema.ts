@@ -67,3 +67,31 @@ export const updateUserSchema = z.object({
 });
 
 export type UpdateUserFormValues = z.infer<typeof updateUserSchema>;
+
+export const forgotPasswordSchema = z.object({
+  [AuthField.Email]: z
+    .string()
+    .min(1, "Email is required")
+    .check(z.email({ message: "Please enter a valid email address" })),
+});
+
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+
+export const resetPasswordSchema = z
+  .object({
+    [AuthField.Password]: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
+    [AuthField.ConfirmPassword]: z
+      .string()
+      .min(1, "Please confirm your password"),
+  })
+  .refine(
+    (data) => data[AuthField.Password] === data[AuthField.ConfirmPassword],
+    {
+      message: "Passwords do not match",
+      path: [AuthField.ConfirmPassword],
+    },
+  );
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

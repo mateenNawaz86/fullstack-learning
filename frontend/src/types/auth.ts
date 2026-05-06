@@ -52,3 +52,22 @@ export interface ApiErrorResponse {
   success: false;
   message: string;
 }
+
+export interface ForgotPasswordRequest {
+  [AuthField.Email]: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  [AuthField.Password]: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}

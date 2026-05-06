@@ -6,6 +6,8 @@ import {
   refreshAccessToken,
   registerUserController,
   getMe,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -28,5 +30,9 @@ router.post("/login", authLimiter, loginUser);
 router.post("/logout", logoutUser);
 router.post("/refresh", refreshAccessToken);
 router.get("/me", protect, getMe);
+
+// Rate-limited so an attacker cannot spam password reset emails or brute-force tokens
+router.post("/forgot-password", authLimiter, forgotPassword);
+router.post("/reset-password/:token", authLimiter, resetPassword);
 
 export default router;

@@ -7,6 +7,10 @@ import type {
   LogoutResponse,
   RefreshResponse,
   GetMeResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
 } from "../types/auth";
 
 export const authApi = baseApi.injectEndpoints({
@@ -51,6 +55,22 @@ export const authApi = baseApi.injectEndpoints({
     getMe: builder.query<GetMeResponse, void>({
       query: () => "/auth/me",
     }),
+
+    forgotPassword: builder.mutation<ForgotPasswordResponse, ForgotPasswordRequest>({
+      query: (body) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body,
+      }),
+    }),
+
+    resetPassword: builder.mutation<ResetPasswordResponse, ResetPasswordRequest>({
+      query: ({ token, password }) => ({
+        url: `/auth/reset-password/${token}`,
+        method: "POST",
+        body: { password },
+      }),
+    }),
   }),
 });
 
@@ -60,4 +80,6 @@ export const {
   useLogoutMutation,
   useRefreshMutation,
   useGetMeQuery,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

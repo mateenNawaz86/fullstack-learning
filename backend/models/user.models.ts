@@ -9,6 +9,8 @@ export interface IUser {
   role: "user" | "admin";
   isVerified: boolean;
   refreshToken?: string;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +63,18 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
     // Stored to validate refresh token requests and invalidate on logout
     refreshToken: {
       type: String,
+      select: false,
+    },
+
+    // SHA-256 hash of the one-time reset token — never store the raw token in DB
+    passwordResetToken: {
+      type: String,
+      select: false,
+    },
+
+    // Token is only valid while this date is in the future
+    passwordResetExpires: {
+      type: Date,
       select: false,
     },
   },

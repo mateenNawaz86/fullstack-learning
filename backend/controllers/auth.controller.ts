@@ -2,7 +2,11 @@ import crypto from "crypto";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Request, Response } from "express";
 import { User } from "../models/user.models";
-import { generateAccessToken, generateRefreshToken } from "../utils/generateToken";
+import { PasswordResetToken } from "../models/password-reset-token.model";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+} from "../utils/generateToken";
 import { accessCookieOptions, refreshCookieOptions } from "../utils/cookies";
 import { sendEmail } from "../utils/sendEmail";
 
@@ -25,7 +29,9 @@ export const registerUserController = async (
     };
 
     if (!name || !email || !password) {
-      res.status(400).json({ success: false, message: "All Fields are required!" });
+      res
+        .status(400)
+        .json({ success: false, message: "All Fields are required!" });
       return;
     }
 
@@ -55,15 +61,21 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body as { email: string; password: string };
 
     if (!email || !password) {
-      res.status(400).json({ success: false, message: "Email and password are required" });
+      res
+        .status(400)
+        .json({ success: false, message: "Email and password are required" });
       return;
     }
 
     // Explicitly select password and refreshToken (both have select: false in schema)
-    const user = await User.findOne({ email }).select("+password +refreshToken");
+    const user = await User.findOne({ email }).select(
+      "+password +refreshToken",
+    );
 
     if (!user) {
-      res.status(401).json({ success: false, message: "Invalid email or password" });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
       return;
     }
 
@@ -71,7 +83,9 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
-      res.status(401).json({ success: false, message: "Invalid email or password" });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid email or password" });
       return;
     }
 
@@ -106,7 +120,9 @@ export const refreshAccessToken = async (
     const token = req.cookies?.refreshToken as string | undefined;
 
     if (!token) {
-      res.status(401).json({ success: false, message: "No refresh token provided" });
+      res
+        .status(401)
+        .json({ success: false, message: "No refresh token provided" });
       return;
     }
 
@@ -126,7 +142,9 @@ export const refreshAccessToken = async (
     const user = await User.findById(decoded.id).select("+refreshToken");
 
     if (!user || user.refreshToken !== token) {
-      res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+      res
+        .status(401)
+        .json({ success: false, message: "Invalid or expired refresh token" });
       return;
     }
 
@@ -136,7 +154,9 @@ export const refreshAccessToken = async (
 
     res.status(200).json({ success: true, message: "Access token refreshed" });
   } catch (error) {
-    res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+    res
+      .status(401)
+      .json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
 
@@ -150,7 +170,10 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Logout — clears tokens from DB and removes cookies
-export const logoutUser = async (req: Request, res: Response): Promise<void> => {
+export const logoutUser = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const refreshToken = req.cookies?.refreshToken as string | undefined;
 
@@ -173,7 +196,10 @@ export const logoutUser = async (req: Request, res: Response): Promise<void> => 
 };
 
 // Step 1 of password reset — generates a one-time token and emails a reset link to the user
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body as { email: string };
 
@@ -182,13 +208,16 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Select the reset-token fields too — both have select: false in the schema
-    const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires");
+    // Find the user by email — if not found, we still return 200 to prevent email enumeration attacks
+    const user = await User.findOne({ email });
 
     // Always return 200 whether or not the email exists in our DB.
     // Returning 404 would let an attacker discover which emails are registered.
     if (!user) {
-      res.status(200).json({ success: true, message: "If that email is registered, a reset link has been sent" });
+      res.status(200).json({
+        success: true,
+        message: "If that email is registered, a reset link has been sent",
+      });
       return;
     }
 
@@ -197,15 +226,16 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     const rawToken = crypto.randomBytes(32).toString("hex");
 
     // Store only the SHA-256 hash — if the DB is breached the hashes are useless alone.
-    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
-    user.passwordResetToken = hashedToken;
-    // 10-minute expiry — short window limits how long a stolen link is usable
-    user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-    // validateBeforeSave: false skips full schema validation so we don't accidentally
-    // trigger errors on unrelated required fields while only saving token metadata
-    await user.save({ validateBeforeSave: false });
+    await PasswordResetToken.create({
+      userId: user._id,
+      token: hashedToken,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
 
     // The link the user clicks — contains the RAW (unhashed) token
     const resetUrl = `${process.env.CLIENT_URL}/reset-password/${rawToken}`;
@@ -236,63 +266,79 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     } catch (emailError) {
       // If the email fails to send, clear the token we just saved so the user
       // can try again — otherwise the token sits in the DB unused for 10 minutes
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save({ validateBeforeSave: false });
+      await PasswordResetToken.deleteOne({ token: hashedToken });
 
-      res.status(500).json({ success: false, message: "Failed to send reset email. Please try again." });
+      res.status(500).json({
+        success: false,
+        message: "Failed to send reset email. Please try again.",
+      });
       return;
     }
 
-    res.status(200).json({ success: true, message: "If that email is registered, a reset link has been sent" });
+    res.status(200).json({
+      success: true,
+      message: "If that email is registered, a reset link has been sent",
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: (error as Error).message });
   }
 };
 
 // Step 2 of password reset — validates the token from the URL and sets the new password
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     // The raw token comes from the URL param — same value that was emailed to the user
     const { token } = req.params as { token: string };
     const { password } = req.body as { password: string };
 
     if (!password) {
-      res.status(400).json({ success: false, message: "New password is required" });
+      res
+        .status(400)
+        .json({ success: false, message: "New password is required" });
       return;
     }
 
-    // Re-hash the incoming raw token using the same algorithm we used when storing it.
-    // We then look for a DB record with this hash — if it matches, the token is genuine.
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
-    // Find a user whose stored hash matches AND whose expiry is still in the future.
-    // A single query handles both "token not found" and "token expired" cases.
-    const user = await User
-      .findOne({
-        passwordResetToken: hashedToken,
-        passwordResetExpires: { $gt: new Date() }, // $gt = greater than = still in the future
-      })
-      .select("+password +passwordResetToken +passwordResetExpires");
+    // Find a token record that matches, is still within its expiry, and has not been used yet
+    const resetRecord = await PasswordResetToken.findOne({
+      token: hashedToken,
+      expiresAt: { $gt: new Date() },
+      usedAt: { $exists: false },
+    });
+
+    if (!resetRecord) {
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired reset token" });
+      return;
+    }
+
+    // Find the user associated with the reset record
+    const user = await User.findById(resetRecord.userId).select("+password");
 
     if (!user) {
-      // We deliberately don't distinguish "wrong token" from "expired token" —
-      // both get the same message so an attacker learns nothing extra.
-      res.status(400).json({ success: false, message: "Invalid or expired reset token" });
+      res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired reset token" });
       return;
     }
 
     // Set the new password — the pre-save hook in user.models.ts will hash it automatically
     user.password = password;
-
-    // Clear the reset token fields so this link can never be used again
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-
-    // save() triggers the bcrypt pre-save hook which hashes user.password
     await user.save();
 
-    res.status(200).json({ success: true, message: "Password has been reset. You can now log in." });
+    // Stamp usedAt to preserve the audit record while making the token one-time-use
+    resetRecord.usedAt = new Date();
+    await resetRecord.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password has been reset. You can now log in.",
+    });
   } catch (error) {
     if ((error as Error).name === "ValidationError") {
       res.status(422).json({

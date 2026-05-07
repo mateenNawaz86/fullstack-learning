@@ -71,3 +71,10 @@ export interface ResetPasswordResponse {
   success: boolean;
   message: string;
 }
+
+export type TokenInvalidReason = "used" | "expired" | "invalid";
+
+export interface ValidateResetTokenResponse {
+  success: boolean;
+  reason?: TokenInvalidReason;
+}

@@ -195,6 +195,36 @@ export const logoutUser = async (
   }
 };
 
+// Pre-flight check for the reset password page — tells the client why a token is unusable
+// without consuming it. Returns one of three reasons so the UI can show a precise message.
+export const validateResetToken = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const { token } = req.params as { token: string };
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const record = await PasswordResetToken.findOne({ token: hashedToken });
+
+  if (!record) {
+    res.status(400).json({ success: false, reason: "invalid" });
+    return;
+  }
+
+  if (record.usedAt) {
+    res.status(400).json({ success: false, reason: "used" });
+    return;
+  }
+
+  if (record.expiresAt < new Date()) {
+    res.status(400).json({ success: false, reason: "expired" });
+    return;
+  }
+
+  res.status(200).json({ success: true });
+};
+
 // Step 1 of password reset — generates a one-time token and emails a reset link to the user
 export const forgotPassword = async (
   req: Request,

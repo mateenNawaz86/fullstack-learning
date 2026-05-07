@@ -11,6 +11,7 @@ import type {
   ForgotPasswordResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
+  ValidateResetTokenResponse,
 } from "../types/auth";
 
 export const authApi = baseApi.injectEndpoints({
@@ -71,6 +72,10 @@ export const authApi = baseApi.injectEndpoints({
         body: { password },
       }),
     }),
+
+    validateResetToken: builder.query<ValidateResetTokenResponse, string>({
+      query: (token) => `/auth/reset-password/${token}/validate`,
+    }),
   }),
 });
 
@@ -82,4 +87,5 @@ export const {
   useGetMeQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useValidateResetTokenQuery,
 } = authApi;

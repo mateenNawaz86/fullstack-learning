@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from "../../../lib/validation/auth.schema";
-import { useResetPasswordMutation } from "../../../services/authApi";
+import {
+  useResetPasswordMutation,
+  useValidateResetTokenQuery,
+} from "../../../services/authApi";
 import { FormField } from "./FormField";
 import { AuthField } from "@/src/enums/enum";
+import type { TokenInvalidReason } from "@/src/types/auth";
+import { FormHeading } from "@/src/components/ui/form-heading";
+import { TokenCheckingSkeleton } from "@/src/components/ui/token-checking-skeleton";
+import { PasswordUpdateSuccess } from "@/src/components/ui/password-update-success";
+import { TokenInvalidScreen } from "@/src/components/ui/invalid-token-screen";
 
 interface ResetPasswordFormProps {
   token: string;
@@ -18,7 +25,15 @@ interface ResetPasswordFormProps {
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [success, setSuccess] = useState(false);
-  const [resetPassword, { isLoading }] = useResetPasswordMutation();
+  const [resetPassword, { isLoading: isResetting }] =
+    useResetPasswordMutation();
+
+  const {
+    data: validation,
+    isLoading: isValidating,
+    isError: isValidationError,
+    error: validationError,
+  } = useValidateResetTokenQuery(token);
 
   const {
     register,
@@ -31,7 +46,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     try {
-      await resetPassword({ token, password: values[AuthField.Password] }).unwrap();
+      await resetPassword({
+        token,
+        password: values[AuthField.Password],
+      }).unwrap();
       setSuccess(true);
     } catch (err) {
       const message =
@@ -41,60 +59,67 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     }
   };
 
+  if (isValidating) {
+    return <TokenCheckingSkeleton />;
+  }
+
+  if (isValidationError || !validation?.success) {
+    const reason: TokenInvalidReason =
+      (validationError as { data?: { reason?: TokenInvalidReason } })?.data
+        ?.reason ??
+      (validation as { reason?: TokenInvalidReason } | undefined)?.reason ??
+      "invalid";
+    return <TokenInvalidScreen reason={reason} />;
+  }
+
   if (success) {
-    return (
-      <div className="space-y-4 text-center">
-        <p className="text-sm text-gray-300">
-          Your password has been reset successfully.
-        </p>
-        <Link
-          href="/login"
-          className="inline-block rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
-        >
-          Sign in
-        </Link>
-      </div>
-    );
+    return <PasswordUpdateSuccess />;
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
-      <FormField
-        id={AuthField.Password}
-        label="New password"
-        type="password"
-        placeholder="••••••••"
-        registration={register(AuthField.Password)}
-        error={errors[AuthField.Password]}
-        disabled={isLoading}
+    <>
+      <FormHeading
+        heading="Set a new password"
+        subheading="Choose a strong password for your account."
       />
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+        <FormField
+          id={AuthField.Password}
+          label="New password"
+          type="password"
+          placeholder="••••••••"
+          registration={register(AuthField.Password)}
+          error={errors[AuthField.Password]}
+          disabled={isResetting}
+        />
 
-      <FormField
-        id={AuthField.ConfirmPassword}
-        label="Confirm new password"
-        type="password"
-        placeholder="••••••••"
-        registration={register(AuthField.ConfirmPassword)}
-        error={errors[AuthField.ConfirmPassword]}
-        disabled={isLoading}
-      />
+        <FormField
+          id={AuthField.ConfirmPassword}
+          label="Confirm new password"
+          type="password"
+          placeholder="••••••••"
+          registration={register(AuthField.ConfirmPassword)}
+          error={errors[AuthField.ConfirmPassword]}
+          disabled={isResetting}
+        />
 
-      {errors.root && (
-        <p
-          role="alert"
-          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+        {errors.root && (
+          <p
+            role="alert"
+            className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+          >
+            {errors.root.message}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={isResetting}
+          className="cursor-pointer w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {errors.root.message}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="cursor-pointer w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-950 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isLoading ? "Resetting…" : "Reset password"}
-      </button>
-    </form>
+          {isResetting ? "Resetting…" : "Reset password"}
+        </button>
+      </form>
+    </>
   );
 }

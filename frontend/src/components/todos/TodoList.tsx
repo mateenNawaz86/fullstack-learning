@@ -48,8 +48,8 @@ export function TodoList() {
           </p>
         )}
 
-        {!isLoading && !isError && data && data.todos.length > 0 && (
-          <ul className="space-y-3">
+        {!isLoading && !isError && data && data.todos?.length > 0 && (
+          <ul className="space-y-3 max-h-80 overflow-y-auto pr-4">
             {data.todos.map((todo) => (
               <li key={todo._id}>
                 <TodoItem todo={todo} />

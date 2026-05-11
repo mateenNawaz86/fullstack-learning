@@ -10,6 +10,7 @@ import connectDB from "./config/db";
 import authRoutes from "./routes/auth.routes";
 import usersRoutes from "./routes/users.routes";
 import todosRoutes from "./routes/todos.routes";
+import financeRoutes from "./routes/finance/index";
 import { errorHandler } from "./middleware/error.middleware";
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/todos", todosRoutes);
+app.use("/api/finance", financeRoutes);
 
 // Health check — used by load balancers and container orchestrators
 app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));

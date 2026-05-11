@@ -73,7 +73,10 @@ export function CreateTodoForm() {
             {...register("title")}
           />
           {errors.title && (
-            <p role="alert" className="flex items-center gap-1 text-xs text-red-400">
+            <p
+              role="alert"
+              className="flex items-center gap-1 text-xs text-red-400"
+            >
               <span aria-hidden="true">✕</span>
               {errors.title.message}
             </p>
@@ -90,7 +93,7 @@ export function CreateTodoForm() {
           </label>
           <textarea
             id="description"
-            rows={2}
+            rows={4}
             placeholder="Add a note…"
             disabled={isLoading}
             aria-invalid={errors.description ? "true" : "false"}
@@ -105,7 +108,10 @@ export function CreateTodoForm() {
             {...register("description")}
           />
           {errors.description && (
-            <p role="alert" className="flex items-center gap-1 text-xs text-red-400">
+            <p
+              role="alert"
+              className="flex items-center gap-1 text-xs text-red-400"
+            >
               <span aria-hidden="true">✕</span>
               {errors.description.message}
             </p>

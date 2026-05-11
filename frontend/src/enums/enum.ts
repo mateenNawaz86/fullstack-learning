@@ -7,6 +7,7 @@ export enum AuthField {
   Email = "email",
   Password = "password",
   ConfirmPassword = "confirmPassword",
+  Role = "role",
 }
 
 export enum UserField {

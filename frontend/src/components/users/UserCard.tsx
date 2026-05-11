@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { UserField, type User } from "../../types/user";
+import { AuthField } from "../../types/auth";
+import { useAppSelector } from "../../store/hooks";
 import { EditUserModal } from "./EditUserModal";
 
 interface UserCardProps {
@@ -10,9 +12,10 @@ interface UserCardProps {
 
 export function UserCard({ user }: UserCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const currentUser = useAppSelector((state) => state.auth.user);
+  const isAdmin = currentUser?.[AuthField.Role] === "admin";
 
   return (
-    // Fragment needed because the modal is rendered outside the card div
     <>
       <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 px-5 py-4 transition-colors hover:bg-white/10">
         <div
@@ -41,12 +44,14 @@ export function UserCard({ user }: UserCardProps) {
           {user[UserField.Role]}
         </span>
 
-        <button
-          onClick={() => setIsEditing(true)}
-          className="cursor-pointer shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:border-white/20 hover:text-white"
-        >
-          Edit
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="cursor-pointer shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:border-white/20 hover:text-white"
+          >
+            Edit
+          </button>
+        )}
       </div>
 
       <EditUserModal

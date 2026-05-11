@@ -68,12 +68,10 @@ export function EditTodoModal({ todo, isOpen, onClose }: EditTodoModalProps) {
   };
 
   return (
-    // Backdrop — clicking it closes the modal
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={handleClose}
     >
-      {/* Modal card — stop propagation so clicks inside don't close it */}
       <div
         className="w-full max-w-md rounded-xl border border-white/10 bg-gray-900 p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -110,7 +108,10 @@ export function EditTodoModal({ todo, isOpen, onClose }: EditTodoModalProps) {
               {...register("title")}
             />
             {errors.title && (
-              <p role="alert" className="flex items-center gap-1 text-xs text-red-400">
+              <p
+                role="alert"
+                className="flex items-center gap-1 text-xs text-red-400"
+              >
                 <span aria-hidden="true">✕</span>
                 {errors.title.message}
               </p>
@@ -127,7 +128,7 @@ export function EditTodoModal({ todo, isOpen, onClose }: EditTodoModalProps) {
             </label>
             <textarea
               id="edit-description"
-              rows={3}
+              rows={4}
               disabled={isLoading}
               aria-invalid={errors.description ? "true" : "false"}
               className={[
@@ -141,7 +142,10 @@ export function EditTodoModal({ todo, isOpen, onClose }: EditTodoModalProps) {
               {...register("description")}
             />
             {errors.description && (
-              <p role="alert" className="flex items-center gap-1 text-xs text-red-400">
+              <p
+                role="alert"
+                className="flex items-center gap-1 text-xs text-red-400"
+              >
                 <span aria-hidden="true">✕</span>
                 {errors.description.message}
               </p>

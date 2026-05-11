@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { useEffect } from "react";
+import { AuthField } from "@/src/enums/enum";
+import { baseApi } from "@/src/services/baseApi";
+import { useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/src/store/hooks";
 import { useGetMeQuery, useLogoutMutation } from "@/src/services/authApi";
 import { clearCredentials, setCredentials } from "@/src/store/authSlice";
-import { baseApi } from "@/src/services/baseApi";
-import { AuthField } from "@/src/enums/enum";
 
 export default function DashboardLayout({
   children,
@@ -24,8 +24,11 @@ export default function DashboardLayout({
   // the HTTP-only cookie. Skipped when user is already in Redux (in-session nav).
   // baseQueryWithReauth transparently refreshes an expired access token, so this
   // only errors when both tokens are gone/invalid → redirect to login.
-  const { data: meData, isLoading: isRestoring, isError: isSessionInvalid } =
-    useGetMeQuery(undefined, { skip: !!user });
+  const {
+    data: meData,
+    isLoading: isRestoring,
+    isError: isSessionInvalid,
+  } = useGetMeQuery(undefined, { skip: !!user });
 
   useEffect(() => {
     if (meData?.user) dispatch(setCredentials(meData.user));
@@ -72,9 +75,16 @@ export default function DashboardLayout({
           </nav>
 
           <div className="flex items-center gap-4">
-            <span className="hidden text-xs text-gray-400 sm:block">
-              {user[AuthField.Email]}
-            </span>
+            <div className="hidden items-center gap-2 sm:flex">
+              {user[AuthField.Role] === "admin" && (
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-medium text-amber-300">
+                  admin
+                </span>
+              )}
+              <span className="text-xs text-gray-400">
+                {user[AuthField.Email]}
+              </span>
+            </div>
 
             <button
               onClick={handleLogout}

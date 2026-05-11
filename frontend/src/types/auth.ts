@@ -4,10 +4,14 @@
 import { AuthField } from "../enums/enum";
 export { AuthField };
 
+import type { UserRole } from "./user";
+export type { UserRole };
+
 export interface AuthUser {
   [AuthField.Id]: string;
   [AuthField.Name]: string;
   [AuthField.Email]: string;
+  [AuthField.Role]: UserRole;
 }
 
 export interface RegisterRequest {

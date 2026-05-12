@@ -3,6 +3,7 @@ import type {
   GetUsersResponse,
   UpdateUserRequest,
   UpdateUserResponse,
+  UploadAvatarResponse,
 } from "../types/user";
 
 export const usersApi = baseApi.injectEndpoints({
@@ -25,7 +26,23 @@ export const usersApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Users"],
     }),
+
+    // Separate avatar-only mutation — sends FormData to PATCH /users/:id/avatar.
+    // Kept separate from updateUser so profile text updates stay plain JSON and
+    // the avatar can be changed independently without touching the text form.
+    uploadAvatar: builder.mutation<UploadAvatarResponse, { id: string; formData: FormData }>({
+      query: ({ id, formData }) => ({
+        url: `/users/${id}/avatar`,
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["Users"],
+    }),
   }),
 });
 
-export const { useGetUsersQuery, useUpdateUserMutation } = usersApi;
+export const {
+  useGetUsersQuery,
+  useUpdateUserMutation,
+  useUploadAvatarMutation,
+} = usersApi;

@@ -59,6 +59,7 @@ export default function DashboardLayout({
             {[
               { href: "/users", label: "Users" },
               { href: "/todos", label: "Todos" },
+              { href: "/finance", label: "Finance" },
             ].map(({ href, label }) => (
               <Link
                 key={href}

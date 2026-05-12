@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   updateUserSchema,
   type UpdateUserFormValues,
 } from "../../lib/validation/auth.schema";
-import { useUpdateUserMutation } from "../../services/usersApi";
+import { useUpdateUserMutation, useUploadAvatarMutation } from "../../services/usersApi";
 import { FormField } from "../../features/auth/components/FormField";
 import { type User, UserField } from "../../types/user";
 import { AuthField } from "../../enums/enum";
@@ -20,6 +20,12 @@ interface EditUserModalProps {
 
 export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
   const [updateUser, { isLoading }] = useUpdateUserMutation();
+  const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
+
+  // Local preview so the avatar updates instantly without waiting for the cache refetch
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -44,8 +50,29 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
         [AuthField.Email]: user[UserField.Email],
         [AuthField.Password]: "",
       });
+      setAvatarPreview(null);
+      setAvatarError(null);
     }
   }, [isOpen, user, reset]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarError(null);
+    // Show a local preview immediately — no waiting for the Cloudinary round-trip
+    setAvatarPreview(URL.createObjectURL(file));
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    try {
+      await uploadAvatar({ id: user[UserField.Id], formData }).unwrap();
+    } catch {
+      setAvatarPreview(null);
+      setAvatarError("Failed to upload avatar. Please try again.");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -95,6 +122,53 @@ export function EditUserModal({ user, isOpen, onClose }: EditUserModalProps) {
             Updating profile for{" "}
             <span className="text-gray-200">{user[UserField.Name]}</span>
           </p>
+        </div>
+
+        {/* ── Avatar upload — completely independent of the text form below ── */}
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <div className="relative">
+            {avatarPreview || user[UserField.AvatarUrl] ? (
+              <img
+                src={avatarPreview ?? user[UserField.AvatarUrl]}
+                alt={user[UserField.Name]}
+                className="size-20 rounded-full object-cover ring-2 ring-white/10"
+              />
+            ) : (
+              <div className="flex size-20 items-center justify-center rounded-full bg-indigo-500/20 text-2xl font-semibold text-indigo-300 ring-2 ring-white/10">
+                {user[UserField.Name].charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            {isUploadingAvatar && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
+                <div className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col items-center gap-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+              disabled={isUploadingAvatar}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              className="cursor-pointer text-xs font-medium text-indigo-400 hover:text-indigo-300 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isUploadingAvatar ? "Uploading…" : "Change avatar"}
+            </button>
+            <span className="text-xs text-gray-500">JPG, PNG, WebP · max 5 MB</span>
+          </div>
+
+          {avatarError && (
+            <p className="text-xs text-red-400">{avatarError}</p>
+          )}
         </div>
 
         <form

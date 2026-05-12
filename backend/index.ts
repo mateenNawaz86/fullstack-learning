@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "./config/env"; // must be first — loads process.env before any module reads it
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -12,8 +12,6 @@ import usersRoutes from "./routes/users.routes";
 import todosRoutes from "./routes/todos.routes";
 import financeRoutes from "./routes/finance/index";
 import { errorHandler } from "./middleware/error.middleware";
-
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT;

@@ -9,6 +9,8 @@ export interface IUser {
   role: "user" | "admin";
   isVerified: boolean;
   refreshToken?: string;
+  avatarUrl?: string;
+  avatarPublicId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +65,9 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       type: String,
       select: false,
     },
+    avatarUrl: { type: String },
+    // Internal Cloudinary identifier — excluded from API responses, only used to delete old avatars
+    avatarPublicId: { type: String, select: false },
   },
   { timestamps: true },
 );

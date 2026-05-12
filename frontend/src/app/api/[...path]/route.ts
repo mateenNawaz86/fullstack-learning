@@ -31,10 +31,11 @@ async function handler(
       headers.set("cookie", cookieHeader);
     }
 
-    // Get request body if present
-    let body: string | undefined;
+    // Use arrayBuffer for ALL body types (JSON, text, or multipart/form-data).
+    // req.text() corrupts binary file data in multipart uploads — arrayBuffer preserves it.
+    let body: ArrayBuffer | undefined;
     if (req.method !== "GET" && req.method !== "HEAD") {
-      body = await req.text();
+      body = await req.arrayBuffer();
     }
 
     // Make the request to the backend

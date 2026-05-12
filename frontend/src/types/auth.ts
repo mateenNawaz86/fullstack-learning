@@ -12,6 +12,7 @@ export interface AuthUser {
   [AuthField.Name]: string;
   [AuthField.Email]: string;
   [AuthField.Role]: UserRole;
+  avatarUrl?: string;
 }
 
 export interface RegisterRequest {

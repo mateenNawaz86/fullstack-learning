@@ -8,6 +8,7 @@ export interface User {
   [UserField.Name]: string;
   [UserField.Email]: string;
   [UserField.Role]: UserRole;
+  [UserField.AvatarUrl]?: string;
   [UserField.CreatedAt]: string;
   [UserField.UpdatedAt]: string;
 }
@@ -25,6 +26,11 @@ export interface UpdateUserRequest {
 }
 
 export interface UpdateUserResponse {
+  success: boolean;
+  user: User;
+}
+
+export interface UploadAvatarResponse {
   success: boolean;
   user: User;
 }

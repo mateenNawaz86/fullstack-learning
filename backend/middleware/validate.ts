@@ -1,4 +1,4 @@
-import { ZodSchema } from "zod";
+import { z } from "zod"; // ZodSchema was deprecated in Zod v4; use z.ZodType instead
 import { Request, Response, NextFunction } from "express";
 
 // WHY a middleware instead of validating inside each controller?
@@ -11,7 +11,7 @@ import { Request, Response, NextFunction } from "express";
 //   validate() runs first → if it passes, createCategory runs → if it fails, 422 is sent.
 
 export const validate =
-  (schema: ZodSchema) =>
+  (schema: z.ZodType) =>
   (req: Request, res: Response, next: NextFunction): void => {
     // safeParse never throws — it always returns { success, data } or { success, error }
     // Use this instead of .parse() so we control the error response ourselves.

@@ -15,6 +15,7 @@ export enum UserField {
   Name = "name",
   Email = "email",
   Role = "role",
+  AvatarUrl = "avatarUrl",
   CreatedAt = "createdAt",
   UpdatedAt = "updatedAt",
 }
